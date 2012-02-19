@@ -31,22 +31,23 @@ befor_filter (append_before_filter для Devise::SessionsController) котор
 
 Пример:
 
-class User < ActiveRecord::Base
-  devise :database_authenticatable, :registerable, :validatable, :sms_confirmable
-  def phone_for_sms
-    # here your code
+  class User < ActiveRecord::Base
+    devise :database_authenticatable, :registerable, :validatable, :sms_confirmable
+    
+    def phone_for_sms
+      # here your code
+    end
   end
-end
 
-class ApplicationController < ActionController::Base
-  def sms_confirmation?
-    # here your code 
+  class ApplicationController < ActionController::Base
+    def sms_confirmation?
+      # here your code 
+    end
+    
+    def sms_secret
+      # here your code
+    end
   end
-   #
-  def sms_secret
-    # here your code
-  end
-end
 
 == Installation for Rails ~> 3.0 and Devise ~> 1.1
 
