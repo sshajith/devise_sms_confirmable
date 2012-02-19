@@ -1,0 +1,8 @@
+<h2>Sms confirmation</h2>
+<% if alert.blank?%>
+<%= form_for(resource, :as => resource_name, :url => sms_confirmation_path(resource_name)) do |f| %>
+  <p><%= f.label :sms_secret %><br />
+  <%= f.text_field :sms_secret %></p>
+  <p><%= f.submit "Send" %></p>
+<% end %>
+<%end%>

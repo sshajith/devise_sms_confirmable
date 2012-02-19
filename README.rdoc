@@ -1,0 +1,176 @@
+= DeviseSmsConfirmable
+
+Добавляет для Devise[http://github.com/plataformatec/devise] поддержку дополнительного подтверждения пользователем своей личности при входе в систему.
+Если необходима дополнительная верификация, то пользователю отправляется СМС с секретным кодом, который он должен ввести после ввода логина и
+пароля. Непосредственная отправка СМС на данный момент не реализована (ее необходимо сделать подключаемым модулем).
+
+== How does it work?
+
+При подключении модуля DeviseSmsConfirmable (в вашей модели в методе devise ..., :sms_confirmable) в Devise::SessionsController добавляется специальный
+befor_filter (append_before_filter для Devise::SessionsController) который вызывает данный модуль при регистрации пользователя.
+Для опеределения нужна ли дополнительная верификация модуль использует специальный метод класса ApplicationController вашего приложения имя которого
+задается в конфигурационном файле для Devise (метод необходимо определить в классе ApplicationController): 
+ 
+  config.sms_confirmation_method = :sms_confirmation?
+
+Если метод возвращает true, то модуль проверяет логин и пароль введенные пользователем (с помощью метода Warden::authenticate) и если пользователь
+существует, то ему отправляется смс с секретным кодом, пользователь вместе с отправленным ему кодом запоминается в сессии и перенаправляется на страницу
+подтверждения секретного кода.
+Если пользователь ввел неверные логин или пароль, то он возвращается обратно на страницу регистрации.
+Для получения секретного кода модуль использует специальный метод класса ApplicationController вашего приложения имя которого
+задается в конфигурационном файле для Devise (метод необходимо определить в классе ApplicationController): 
+ 
+  config.sms_secret_method = :sms_secret
+
+Для получения номера телефона на который следует отправить смс модуль использует специальный метод вашей модели имя которого
+задается в конфигурационном файле для Devise (метод необходимо определить в классе модели которая используется Devise):
+
+  config.sms_confirmation_field = :phone_for_sms
+
+Если на странице подтверждения пользователь вводит правильный секретный код то он успешно регистрируется в системе.
+
+Пример:
+
+class User < ActiveRecord::Base
+  devise :database_authenticatable, :registerable, :validatable, :sms_confirmable
+  def phone_for_sms
+    # here your code
+  end
+end
+
+class ApplicationController < ActionController::Base
+  def sms_confirmation?
+    # here your code 
+  end
+   #
+  def sms_secret
+    # here your code
+  end
+end
+
+== Installation for Rails ~> 3.0 and Devise ~> 1.1
+
+Install DeviseSmsConfirmable gem, it will also install dependencies (such as devise and warden):
+
+  gem install devise_sms_confirmable
+
+Add DeviseSmsConfirmable to your Gemfile (and Devise if you weren't using them):
+
+  gem 'devise',           '~> 1.1.0'
+  gem 'devise_invitable', '~> 0.0.alpha1'
+
+Install and setup Devise if have not yet.
+
+== Automatic installation
+
+Run the following generator to add DeviseSmsConfirmable’s configuration options in the Devise configuration file (config/initializers/devise.rb) and 
+copy locals to your app (config/locales):
+
+  rails generate devise_invitable:install
+
+When you are done, you are ready to add DeviseSmsConfirmable to any of your Devise models using the following generator:
+
+  rails generate devise_invitable MODEL
+
+Replace MODEL by the class name you want to add DeviseInvitable, like User, Admin, etc. This will add the :invitable flag to your model's Devise modules. 
+Continue reading this file to understand exactly what the generator produces and how to use it.
+
+=== Manual installation
+
+Follow the walkthrough for Devise and after it's done, follow this walkthrough.
+
+Add :sms_confirmable to the <tt>devise</tt> call in your model (we’re assuming here you already have a User model with some Devise modules):
+
+  class User < ActiveRecord::Base
+    devise :database_authenticatable, :confirmable, :sms_confirmable
+  end
+
+== Devise configuration
+
+DeviseSmsConfirmable adds some new configuration options.
+
+You can set this configuration option in the Devise initializer as follow:
+
+  # ==> Configuration for :sms_confirmable
+  # sms_confirmation_field: model field which store phone for sms confirmation
+  #config.sms_confirmation_field = :phone_for_sms
+  # sms_confirmation_method: method of ApplicationController which return true if sms confirmation requred.
+  #config.sms_confirmation_method = :sms_confirmation?
+  # sms_secret_method: method of ApplicationController which return secret for sending
+  #config.sms_secret_method = :sms_secret
+
+== Configuring views
+
+All the views are packaged inside the gem. If you'd like to customize the views, invoke the following generator and it will copy all the views to your application:
+
+  rails generate devise_sms_confirmable:views
+
+You can also use the generator to generate scoped views:
+
+  rails generate devise_invitable:views users
+
+Please refer to {Devise's README}[http://github.com/plataformatec/devise] for more information about views.
+
+== Additional configuration
+
+1. Because DeviseSmsConfirmable module uses special methods of your ApplicationController to check if sms confirmation
+required and get sms secret you should provides ones. You can setup methods names in config/initializers/devise.rb, by default
+
+    config.sms_confirmation_method = :sms_confirmation?
+    config.sms_secret_method = :sms_secret
+
+2. Because DeviseSmsConfirmable uses special field of authentication model to get phone number you should provide one.
+You can setup field name in config/initializers/devise.rb, by default
+
+  config.sms_confirmation_field = :phone_for_sms
+
+== I18n
+
+DeviseSmsConfirmable uses flash messages with I18n with the flash keys <tt>:signed_in</tt>, <tt>:not_confirmed</tt> and add the following keys for Devise - 
+<tt>:send_sms_success</tt>, <tt>send_sms_fail</tt> and <tt>phone_not_found</tt>
+To customize your app, you can modify the generated locale file:
+
+en:
+  devise:
+    sms_confirmations:
+      signed_in: 'Signed in successfully.'
+      not_confirmed: 'Secret not confirmed.'
+    sessions:
+      send_sms_success: 'Please input code from SMS'
+      send_sms_fail: "Please try Sign in later because we can't send SMS with confirmation code"
+      phone_not_found: "You can't Sign in because phone for SMS confirmation not found"
+
+You can also create distinct messages based on the resource you've configured using the singular name given in routes:
+
+en:
+  devise:
+    sms_confirmations:
+      :user
+        signed_in: 'Signed in successfully.'
+        not_confirmed: 'Secret not confirmed.'
+    sessions:
+      :user
+        send_sms_success: 'Please input code from SMS'
+        send_sms_fail: "Please try Sign in later because we can't send SMS with confirmation code"
+        phone_not_found: "You can't Sign in because phone for SMS confirmation not found"
+
+Take a look at the generated locale file (in <tt>config/locales/devise_sms_confirmable.en.yml</tt>) to check all available messages.
+
+== Other ORMs
+
+DeviseSmsConfirmable supports ActiveRecord and Mongoid, like Devise.
+
+== Contributors
+
+
+== Note on Patches/Pull Requests
+ 
+* Fork the project.
+* Make your feature addition or bug fix.
+* Add tests for it. This is important so I don't break it in a future version unintentionally.
+* Commit, do not mess with rakefile, version, or history. (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
+* Send me a pull request. Bonus points for topic branches.
+
+== Copyright
+
+Copyright (c) 2012 Sergey Baranov. See LICENSE for details.

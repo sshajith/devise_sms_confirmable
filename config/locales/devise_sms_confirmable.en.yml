@@ -1,0 +1,11 @@
+en:
+  devise:
+    sms_confirmations:
+      signed_in: 'Signed in successfully.'
+      not_confirmed: 'Secret not confirmed.'
+    sessions:
+      send_sms_success: 'Please input code from SMS'
+      send_sms_fail: "Please try Sign in later because we can't send SMS with confirmation code"
+      phone_not_found: "You can't Sign in because phone for SMS confirmation not found"
+
+
