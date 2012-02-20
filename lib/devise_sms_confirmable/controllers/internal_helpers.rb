@@ -1,8 +1,9 @@
 module DeviseSmsConfirmable
-
-  class ConfirmationMethodNotFound < RuntimeError; end
-  class SecretMethodNotFound < RuntimeError; end
-  class ConfirmationFieldNotFound < RuntimeError; end
+  class DeviseSmsConfirmableError < RuntimeError; end
+  class ConfirmationMethodNotFound < DeviseSmsConfirmableError; end
+  class SecretMethodNotFound < DeviseSmsConfirmableError; end
+  class ConfirmationFieldNotFound < DeviseSmsConfirmableError; end
+  class ValidSendSmsMethodNotFound  < DeviseSmsConfirmableError; end
 
   module Controllers
     # This module will be included to Devise::Controllers::InternalHelpers if sms confirmation module uses. See ../roures.rb
@@ -14,21 +15,23 @@ module DeviseSmsConfirmable
       def require_sms_confirmation
         confirmation_method = Devise::sms_confirmation_method
         raise ConfirmationMethodNotFound unless InternalHelpers::valid_method?(self, confirmation_method)
-        if self.send(confirmation_method) 
+        if self.__send__(confirmation_method)
           resource = warden.authenticate(:scope => resource_name)
           if resource
             begin
               secret_method = Devise::sms_secret_method
               raise SecretMethodNotFound unless InternalHelpers::valid_method?(self, secret_method)
-              secret = self.send(secret_method)
+              secret = self.__send__(secret_method)
               resource.sms_secret = secret                            
               confirmation_field = Devise::sms_confirmation_field
               raise ConfirmationFieldNotFound unless InternalHelpers::valid_method?(resource, confirmation_field)
-              phone = resource.send(confirmation_field)
+              phone = resource.__send__(confirmation_field)
               if phone.blank?
                 set_flash_message :alert, :phone_not_found
               else
-                if Provider.send(phone, secret)
+                provider = Devise::sms_provider
+                raise ValidSendSmsMethodNotFound unless InternalHelpers::valid_method?(provider, :send_sms)
+                if provider.__send__(:send_sms, phone, secret)
                   session[:resource4secret] = resource
                   set_flash_message :notice, :send_sms_success
                 else
@@ -41,6 +44,8 @@ module DeviseSmsConfirmable
             end
           end
         end
+      rescue DeviseSmsConfirmableError, ArgumentError
+        raise "DeviseSmsConfirmable module error: #{$!.message} "
       end
       
       # Append require_sms_confirmation to before filters of Devise::SessionsController

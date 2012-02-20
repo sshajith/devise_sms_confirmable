@@ -19,6 +19,18 @@ module Devise
   # sms_secret_method: method of ApplicationController which return secret for sending
   mattr_accessor :sms_secret_method
   @@sms_secret_method = :sms_secret
+  # sms_provider: special object which uses for sending SMS. It must have at least one method send_sms(phone, message) which return true or false
+  mattr_accessor :sms_provider
+  @@sms_provider = DeviseSmsConfirmable::Provider
+  # default_provider_silent: if true default provider does't send sms
+  mattr_accessor :default_provider_silent
+  @@default_provider_silent = false
+  # default_provider_login
+  mattr_accessor :default_provider_login
+  @@default_provider_login = "tstest1001"
+  # default_provider_password
+  mattr_accessor :default_provider_password
+  @@default_provider_password = "tstest1001"
 end
 
 Devise.add_module :sms_confirmable, :controller => :sms_confirmations, :model => 'devise_sms_confirmable/model' ,:route => :sms_confirmation
