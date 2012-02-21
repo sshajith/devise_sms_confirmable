@@ -24,7 +24,7 @@ module Devise
   @@sms_provider = DeviseSmsConfirmable::Provider
   # default_provider_silent: if true default provider does't send sms
   mattr_accessor :default_provider_silent
-  @@default_provider_silent = false
+  @@default_provider_silent = true
   # default_provider_login
   mattr_accessor :default_provider_login
   @@default_provider_login = "tstest1001"
